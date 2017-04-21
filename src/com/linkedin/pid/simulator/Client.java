@@ -16,12 +16,6 @@ public class Client {
         this.stats = stats;
     }
 
-    public void sendRequest(long cost, Stats stats) {
-        System.out.println("send request: " + cost);
-        Request request = new Request(counter.getAndIncrement(), cost, stats);
-        request.send(this, loadBalancer.pickServer(request.getRequestId()));
-    }
-
     public void sendRequest(Request request) {
         //System.out.println("send request: " + request.getCost());
         request.send(this, loadBalancer.pickServer(request.getRequestId()));
@@ -30,6 +24,11 @@ public class Client {
     public void handleResponse(Request request) {
         stats.incrementResultSize();
         request.wrap();
-        System.out.println(request.toString());
+        //System.out.println(request.toString());
+    }
+
+    public void handleError(Request request) {
+        stats.incrementResultSize();
+        //System.out.println(request.toString());
     }
 }

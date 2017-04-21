@@ -11,6 +11,7 @@ public class Stats {
     private AtomicLong totalQueueTime;
     private AtomicLong totalProcessTime;
     private AtomicInteger resultSize;
+    private AtomicInteger errors;
 
     public Stats() {
         init();
@@ -21,12 +22,29 @@ public class Stats {
         totalQueueTime = new AtomicLong(0);
         totalProcessTime = new AtomicLong(0);
         resultSize = new AtomicInteger(0);
+        errors = new AtomicInteger(0);
     }
 
-    public void update(long totalLatency, long totalQueueTime, long totalProcessTime) {
+    public void update(long totalLatency, long totalQueueTime, long totalProcessTime, boolean success) {
         this.totalLatency.addAndGet(totalLatency);
-        this.totalQueueTime.addAndGet(totalQueueTime);
-        this.totalProcessTime.addAndGet(totalProcessTime);
+        if (success) {
+            this.totalQueueTime.addAndGet(totalQueueTime);
+            this.totalProcessTime.addAndGet(totalProcessTime);
+        } else {
+            errors.incrementAndGet();
+        }
+    }
+
+    public AtomicLong getTotalLatency() {
+        return this.totalLatency;
+    }
+
+    public AtomicLong getTotalQueueTime() {
+        return this.totalQueueTime;
+    }
+
+    public AtomicLong getTotalProcessTime() {
+        return this.totalProcessTime;
     }
 
     public void incrementResultSize() {
@@ -40,7 +58,8 @@ public class Stats {
     public String toString() {
      return "Total latency: " + this.totalLatency +
              ", Total Queue Time: " + this.totalQueueTime +
-             ", Total Process Time: " + this.totalProcessTime;
+             ", Total Process Time: " + this.totalProcessTime +
+             ", Total Errors: " + this.errors;
     }
 
     public int getResultSize() {

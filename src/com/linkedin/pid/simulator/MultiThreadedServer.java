@@ -1,5 +1,8 @@
 package com.linkedin.pid.simulator;
 
+import com.linkedin.pid.simulator.util.TaskAccessibleFutureTask;
+import com.linkedin.pid.simulator.util.TaskAccessibleThreadPoolExecutor;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -26,19 +29,24 @@ public class MultiThreadedServer implements Server {
     private RejectedExecutionHandler rejectedExecutionHandler = new RejectedExecutionHandler() {
         @Override
         public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-            System.out.println("Rejected!!");
+            pendingRequests.decrementAndGet();
+            TaskAccessibleFutureTask futureTask = (TaskAccessibleFutureTask) r;
+            Request request = (Request) futureTask.getTask();
+            pendingCosts.addAndGet(-1 * request.getCost());
+            request.error();
+            //System.out.println("Rejected!!");
         }
     };
 
     public MultiThreadedServer(int serverId) {
         this.serverId = serverId;
-        queue = new LinkedBlockingDeque<Runnable>(200);
+        queue = new LinkedBlockingDeque<Runnable>(100);
         running = new AtomicBoolean(true);
         count = new AtomicInteger(0);
         pendingRequests = new AtomicInteger(0);
         pendingCosts = new AtomicLong(0);
 
-        executorService = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.SECONDS, queue, rejectedExecutionHandler);
+        executorService = new TaskAccessibleThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.SECONDS, queue, rejectedExecutionHandler);
     }
 
 
@@ -58,10 +66,9 @@ public class MultiThreadedServer implements Server {
     }
 
     public boolean process(Request request) {
-        //System.out.println("request process start!");
+        // System.out.println("request process start!" + queue.size());
         pendingRequests.incrementAndGet();
         pendingCosts.addAndGet(request.getCost());
-        request.setPendingRequests(pendingRequests);
         request.setServer(this);
         executorService.submit(request);
         request.setQueueTime(System.currentTimeMillis());

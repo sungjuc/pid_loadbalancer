@@ -24,7 +24,7 @@ public class Client implements Runnable {
         Server s = pendingRequestPickServer();
         s.q.add(req);
         long waitInterval = ThreadLocalRandom.current().nextLong(10);
-        System.out.println("Client " + clientId + " added request to server " + s.serverId);
+        //System.out.println("Client " + clientId + " added request to server " + s.serverId);
         Thread.sleep(waitInterval);
       }
     } catch (Exception e) {

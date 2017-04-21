@@ -31,6 +31,7 @@ public class RequestGenerator implements Runnable {
         for (int i = 0; i < numRequests; i++) {
             try {
                 Thread.sleep(interval_mili, interval_nano);
+                //System.out.println(numRequests + " : " + i);
                 client.sendRequest(new Request(i, random.nextInt(200) + 2, stats));
             } catch (InterruptedException e) {
                 e.printStackTrace();

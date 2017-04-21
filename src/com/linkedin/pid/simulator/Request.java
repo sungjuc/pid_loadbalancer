@@ -17,8 +17,7 @@ public class Request implements Runnable {
     private long cost;
     private Server server;
     private Stats stats;
-
-    private AtomicInteger pendingRequests;
+    private boolean success;
 
     public Request(int requestId, long cost, Stats stats) {
         this.requestId = requestId;
@@ -47,26 +46,35 @@ public class Request implements Runnable {
     }
 
     public void wrap() {
+        this.success = true;
         returnTime = System.currentTimeMillis();
+        long totalLatency = returnTime - creationTime;
+        long totalQueueTime = processTime - queueTime;
+        long totalProcessTime = finishTime - processTime;
+        stats.update(totalLatency, totalQueueTime, totalProcessTime, success);
+    }
+
+    public void error() {
+        this.success = false;
+        returnTime = System.currentTimeMillis();
+        long totalLatency = returnTime - creationTime;
+        stats.update(totalLatency, -1, -1, success);
+        caller.handleError(this);
     }
 
     public void setServer(Server server) {
         this.server = server;
     }
 
-    public void setPendingRequests(AtomicInteger pendingRequests) {
-        this.pendingRequests = pendingRequests;
-    }
-
     public String toString() {
-        long totalLatency = returnTime - creationTime;
-        long totalQueueTime = processTime - queueTime;
-        long totalProcessTime = finishTime - processTime;
-        stats.update(totalLatency, totalQueueTime, totalProcessTime);
-
-        return "requestId = " + requestId + ", serverId = " + server.getId() + ", cost = " + cost +
-                ", total latency = " + (totalLatency) + ", queueWaitTime = " + (totalQueueTime) +
-                ", processTime = " + (totalProcessTime);
+        if (success) {
+            return "requestId = " + requestId + ", serverId = " + server.getId() + ", cost = " + cost +
+                    ", total latency = " + (returnTime - creationTime) + ", queueWaitTime = " + (processTime - queueTime) +
+                    ", processTime = " + (finishTime - processTime);
+        } else {
+            return "requestId = " + requestId + ", serverId = " + server.getId() + ", cost = " + cost +
+                    ", total latency = " + (returnTime - creationTime) + ", error";
+        }
     }
 
     @Override

@@ -8,10 +8,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class PendingCostLoadBalancer<T> extends AbstractLoadBalancer implements LoadBalancer<T>{
     private AtomicInteger counter;
+    int costThreshold = 0;
 
-    public PendingCostLoadBalancer(List<Server> serverList) {
+    public PendingCostLoadBalancer(List<Server> serverList, int costThreshold) {
         counter = new AtomicInteger(0);
         super.serverList = serverList;
+        this.costThreshold = costThreshold;
     }
 
     public Server pickServer(T integer) {
@@ -23,7 +25,7 @@ public class PendingCostLoadBalancer<T> extends AbstractLoadBalancer implements 
                 bestServer = (bestServer.getPendingCosts() < server.getPendingCosts())? bestServer: server;
             }
 
-            if (bestServer.getPendingCosts() < 100) {
+            if (bestServer.getPendingRequests() < 3 || bestServer.getPendingCosts() < costThreshold) {
                 return bestServer;
             }
 
